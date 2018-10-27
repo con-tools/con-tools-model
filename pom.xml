@@ -1,0 +1,183 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>tools.con</groupId>
+	<artifactId>model</artifactId>
+	<version>2.0.0-SNAPSHOT</version>
+
+	<properties>
+		<maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.jooq</groupId>
+			<artifactId>jooq</artifactId>
+			<version>3.11.5</version>
+		</dependency>
+		<dependency>
+			<groupId>io.github.jklingsporn</groupId>
+			<artifactId>vertx-jooq-rx-jdbc</artifactId>
+			<version>4.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>io.github.jklingsporn</groupId>
+			<artifactId>vertx-jooq-generate</artifactId>
+			<version>4.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.annotation</groupId>
+			<artifactId>javax.annotation-api</artifactId>
+			<version>1.3.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.inject</groupId>
+			<artifactId>guice</artifactId>
+			<version>[4.2.1,)</version>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+
+			<!-- pre-compile some support classes for model generation -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>compile</goal>
+						</goals>
+					</execution>
+				</executions>
+				<version>${maven.compiler.plugin.version}</version>
+				<configuration>
+					<release>11</release>
+					<includes>
+						<include>tools/con/model/support/*.java</include>
+					</includes>
+				</configuration>
+			</plugin>
+
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.8</version>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<configuration>
+							<target>
+								<concat
+									destfile="${project.build.directory}/classes/setup_db.sql">
+									<fileset
+										file="${project.basedir}/src/main/resources/*.sql" />
+								</concat>
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+
+			<plugin>
+				<groupId>org.jooq</groupId>
+				<artifactId>jooq-codegen-maven</artifactId>
+				<version>3.11.5</version>
+
+				<executions>
+					<execution>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+					</execution>
+				</executions>
+
+				<dependencies>
+					<dependency>
+						<groupId>org.mariadb.jdbc</groupId>
+						<artifactId>mariadb-java-client</artifactId>
+						<version>[2.3,)</version>
+					</dependency>
+					<dependency>
+						<groupId>org.testcontainers</groupId>
+						<artifactId>mariadb</artifactId>
+						<version>[1.9.1,)</version>
+					</dependency>
+					<dependency>
+						<!-- testcontainers is built for testing and requires some classes 
+							from JUnit -->
+						<groupId>junit</groupId>
+						<artifactId>junit</artifactId>
+						<version>[4,)</version>
+					</dependency>
+				</dependencies>
+
+				<configuration>
+					<jdbc>
+						<driver>org.testcontainers.jdbc.ContainerDatabaseDriver</driver>
+						<url>jdbc:tc:mariadb://test@database/test?TC_INITSCRIPT=setup_db.sql&amp;useSSL=false</url>
+					</jdbc>
+
+					<!-- Generator parameters -->
+					<generator>
+						<name>tools.con.model.support.JooqGenerator</name>
+						<database>
+							<name>org.jooq.meta.mariadb.MariaDBDatabase</name>
+							<includes>.*</includes>
+							<inputSchema>test</inputSchema>
+							<outputSchema>contools</outputSchema>
+							<unsignedTypes>false</unsignedTypes>
+							<forcedTypes>
+								<!-- Convert tinyint to boolean -->
+								<forcedType>
+									<name>BOOLEAN</name>
+									<types>(?i:TINYINT)</types>
+								</forcedType>
+								<!-- Convert varchar column with name 'someJsonObject' to a io.vertx.core.json.JsonObject -->
+								<forcedType>
+									<userType>io.vertx.core.json.JsonObject</userType>
+									<converter>io.github.jklingsporn.vertx.jooq.shared.JsonObjectConverter</converter>
+									<expression>someJsonObject</expression>
+									<types>.*</types>
+								</forcedType>
+							</forcedTypes>
+						</database>
+						<target>
+							<packageName>tools.con.model</packageName>
+							<directory>${project.build.directory}/generated-sources/model</directory>
+						</target>
+						<generate>
+							<interfaces>true</interfaces>
+							<daos>true</daos>
+							<fluentSetters>true</fluentSetters>
+						</generate>
+
+
+						<strategy>
+							<name>io.github.jklingsporn.vertx.jooq.generate.VertxGeneratorStrategy</name>
+						</strategy>
+					</generator>
+
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven.compiler.plugin.version}</version>
+				<configuration>
+					<release>11</release>
+				</configuration>
+			</plugin>
+
+		</plugins>
+	</build>
+</project>
