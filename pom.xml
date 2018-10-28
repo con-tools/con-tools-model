@@ -4,11 +4,38 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>tools.con</groupId>
 	<artifactId>model</artifactId>
-	<version>2.0.0</version>
+	<version>2.0.1</version>
 
 	<properties>
 		<maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
 	</properties>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<id>cloudsmith-api</id>
+			<name>Cloudsmith API Releases</name>
+			<url>https://dl.cloudsmith.io/public/cloudsmith/api/maven</url>
+		</pluginRepository>
+	</pluginRepositories>
+
+	<repositories>
+		<repository>
+			<id>cloudsmith-api</id>
+			<name>Cloudsmith API Releases</name>
+			<url>https://dl.cloudsmith.io/public/cloudsmith/api/maven</url>
+		</repository>
+	</repositories>
+
+	<distributionManagement>
+		<snapshotRepository>
+			<id>cloudsmith-snapshots</id>
+			<url>cloudsmith+https://api.cloudsmith.io/con-tools/con-tools</url>
+		</snapshotRepository>
+		<repository>
+			<id>cloudsmith-releases</id>
+			<url>cloudsmith+https://api.cloudsmith.io/con-tools/con-tools</url>
+		</repository>
+	</distributionManagement>
 
 	<dependencies>
 		<dependency>
@@ -39,6 +66,14 @@
 	</dependencies>
 
 	<build>
+		<extensions>
+			<extension>
+				<groupId>io.cloudsmith.maven.wagon</groupId>
+				<artifactId>cloudsmith-maven-wagon</artifactId>
+				<version>0.4.0</version>
+			</extension>
+		</extensions>
+
 		<plugins>
 
 			<!-- pre-compile some support classes for model generation -->
@@ -168,10 +203,31 @@
 				</configuration>
 			</plugin>
 
+			<plugin>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<phase>package</phase>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<phase>package</phase>
+					</execution>
+				</executions>
+			</plugin>
+
 		</plugins>
+
 		<pluginManagement>
 			<plugins>
-				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
 					<artifactId>lifecycle-mapping</artifactId>
