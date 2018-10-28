@@ -1,0 +1,19 @@
+version: 2
+
+jobs:
+  build:
+    working_directory: ~/con-tools-model
+    docker:
+      - image: circleci/openjdk:11-jdk-node-browsers
+    steps:
+      - checkout
+      - restore_cache:
+          key: con-tools-model-{{ checksum "pom.xml" }}
+      - run: mvn dependency:go-offline
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: con-tools-model-{{ checksum "pom.xml" }}
+      - run: mvn deploy
+      - store_artifacts:
+          path: target/model-*.jar
