@@ -20,7 +20,7 @@ jobs:
           name: Update docker config
           command: |
             mkdir -p $HOME/.docker
-            touch $HOME/.docker/config.json
+            echo '{"auths":{}}' > $HOME/.docker/config.json
       - run:
           name: Build and Deploy
           command: mvn deploy
