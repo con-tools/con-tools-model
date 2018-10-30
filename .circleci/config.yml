@@ -12,10 +12,10 @@ jobs:
       - restore_cache:
           key: con-tools-model-{{ checksum "pom.xml" }}
       - run:
-        name: configure test containers
-        command: |
-          echo 'ryuk.container.timeout = 120' >> .testcontainers.properties
-          echo 'checks.disable = true' >> .testcontainers.properties
+          name: configure test containers
+          command: |
+            echo 'ryuk.container.timeout = 120' >> .testcontainers.properties
+            echo 'checks.disable = true' >> .testcontainers.properties
       - run: mvn dependency:go-offline
       - save_cache:
           paths:
