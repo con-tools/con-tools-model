@@ -14,8 +14,8 @@ jobs:
       - run:
           name: configure test containers
           command: |
-            echo 'ryuk.container.timeout = 120' >> .testcontainers.properties
-            echo 'checks.disable = true' >> .testcontainers.properties
+            echo 'ryuk.container.timeout = 120' >> $HOME/.testcontainers.properties
+            echo 'checks.disable = true' >> $HOME/.testcontainers.properties
       - run: mvn dependency:go-offline
       - save_cache:
           paths:
