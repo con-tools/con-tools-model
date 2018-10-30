@@ -5,11 +5,6 @@ jobs:
     working_directory: ~/con-tools-model
     docker:
       - image: circleci/openjdk:11-jdk-node-browsers
-      - image: circleci/mariadb:latest-ram
-        environment:
-          - MYSQL_DATABASE: model
-          - MYSQL_USER: test
-          - MYSQL_PASSWORD: test
     steps:
       - setup_remote_docker:
           docker_layer_caching: true
