@@ -64,353 +64,155 @@
 			<version>[4.2.1,)</version>
 		</dependency>
 	</dependencies>
-	
-	<profiles>
-		<profile>
-			<id>containers</id>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
-			<build>
-				<plugins>
-					<!-- pre-compile some support classes for model generation -->
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-compiler-plugin</artifactId>
-						<executions>
-							<execution>
-								<phase>generate-sources</phase>
-								<goals>
-									<goal>compile</goal>
-								</goals>
-							</execution>
-						</executions>
-						<version>${maven.compiler.plugin.version}</version>
-						<configuration>
-							<release>11</release>
-						</configuration>
-					</plugin>
-
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-antrun-plugin</artifactId>
-						<version>1.8</version>
-						<executions>
-							<execution>
-								<phase>generate-resources</phase>
-								<goals>
-									<goal>run</goal>
-								</goals>
-								<configuration>
-									<target>
-										<concat
-											destfile="${project.build.directory}/classes/setup_db.sql">
-											<fileset
-												file="${project.basedir}/src/main/resources/*.sql" />
-										</concat>
-									</target>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-
-
-					<plugin>
-						<groupId>org.jooq</groupId>
-						<artifactId>jooq-codegen-maven</artifactId>
-						<version>3.11.5</version>
-
-						<executions>
-							<execution>
-								<goals>
-									<goal>generate</goal>
-								</goals>
-							</execution>
-						</executions>
-
-						<dependencies>
-							<dependency>
-								<groupId>org.mariadb.jdbc</groupId>
-								<artifactId>mariadb-java-client</artifactId>
-								<version>[2.3,)</version>
-							</dependency>
-							<dependency>
-								<groupId>org.testcontainers</groupId>
-								<artifactId>mariadb</artifactId>
-								<version>[1.9.1,)</version>
-							</dependency>
-						</dependencies>
-
-						<configuration>
-							<jdbc>
-								<driver>org.testcontainers.jdbc.ContainerDatabaseDriver</driver>
-								<url>jdbc:tc:mariadb://test@database/test?TC_INITSCRIPT=setup_db.sql&amp;useSSL=false</url>
-							</jdbc>
-
-							<!-- Generator parameters -->
-							<generator>
-								<name>tools.con.model.support.JooqGenerator</name>
-								<database>
-									<name>org.jooq.meta.mariadb.MariaDBDatabase</name>
-									<includes>.*</includes>
-									<inputSchema>test</inputSchema>
-									<outputSchema>contools</outputSchema>
-									<unsignedTypes>false</unsignedTypes>
-									<forcedTypes>
-										<!-- Convert tinyint to boolean -->
-										<forcedType>
-											<name>BOOLEAN</name>
-											<types>(?i:TINYINT)</types>
-										</forcedType>
-										<!-- Convert varchar column with name 'someJsonObject' to a io.vertx.core.json.JsonObject -->
-										<forcedType>
-											<userType>io.vertx.core.json.JsonObject</userType>
-											<converter>io.github.jklingsporn.vertx.jooq.shared.JsonObjectConverter</converter>
-											<expression>someJsonObject</expression>
-											<types>.*</types>
-										</forcedType>
-									</forcedTypes>
-								</database>
-								<target>
-									<packageName>tools.con.model</packageName>
-									<directory>${project.build.directory}/generated-sources/model</directory>
-								</target>
-								<generate>
-									<interfaces>true</interfaces>
-									<daos>true</daos>
-									<fluentSetters>true</fluentSetters>
-								</generate>
-
-
-								<strategy>
-									<name>io.github.jklingsporn.vertx.jooq.generate.VertxGeneratorStrategy</name>
-								</strategy>
-							</generator>
-
-						</configuration>
-					</plugin>
-
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-compiler-plugin</artifactId>
-						<version>${maven.compiler.plugin.version}</version>
-						<configuration>
-							<release>11</release>
-						</configuration>
-					</plugin>
-
-					<plugin>
-						<artifactId>maven-source-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>attach-sources</id>
-								<phase>package</phase>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<artifactId>maven-javadoc-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>attach-javadocs</id>
-								<phase>package</phase>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-
-		<profile>
-			<id>circleci</id>
-			<activation>
-				<property>
-					<name>env.CIRCLECI</name>
-					<value>true</value>
-				</property>
-			</activation>
-			<build>
-				<plugins>
-					<!-- pre-compile some support classes for model generation -->
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-compiler-plugin</artifactId>
-						<executions>
-							<execution>
-								<phase>generate-sources</phase>
-								<goals>
-									<goal>compile</goal>
-								</goals>
-							</execution>
-						</executions>
-						<version>${maven.compiler.plugin.version}</version>
-						<configuration>
-							<release>11</release>
-						</configuration>
-					</plugin>
-
-
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-antrun-plugin</artifactId>
-						<version>1.8</version>
-						<executions>
-							<execution>
-								<phase>generate-sources</phase>
-								<configuration>
-									<target>
-										<concat
-											destfile="${project.build.directory}/classes/setup_db.sql">
-											<fileset
-												file="${project.basedir}/src/main/resources/*.sql" />
-										</concat>
-									</target>
-								</configuration>
-								<goals>
-									<goal>run</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-
-					<plugin>
-						<groupId>org.codehaus.mojo</groupId>
-						<artifactId>sql-maven-plugin</artifactId>
-						<dependencies>
-							<dependency>
-								<groupId>org.mariadb.jdbc</groupId>
-								<artifactId>mariadb-java-client</artifactId>
-								<version>[2.3,)</version>
-							</dependency>
-						</dependencies>
-						<configuration>
-							<driver>org.mariadb.jdbc.Driver</driver>
-							<url>jdbc:mariadb://localhost:3306/model</url>
-							<username>test</username>
-							<password>test</password>
-						</configuration>
-						<executions>
-							<execution>
-								<id>create-schema</id>
-								<phase>generate-sources</phase>
-								<goals>
-									<goal>execute</goal>
-								</goals>
-								<configuration>
-									<autocommit>true</autocommit>
-									<srcFiles>
-										<srcFile>${project.build.directory}/classes/setup_db.sql</srcFile>
-									</srcFiles>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-
-					<plugin>
-						<groupId>org.jooq</groupId>
-						<artifactId>jooq-codegen-maven</artifactId>
-						<version>3.11.5</version>
-
-						<executions>
-							<execution>
-								<goals>
-									<goal>generate</goal>
-								</goals>
-							</execution>
-						</executions>
-
-						<dependencies>
-							<dependency>
-								<groupId>org.mariadb.jdbc</groupId>
-								<artifactId>mariadb-java-client</artifactId>
-								<version>[2.3,)</version>
-							</dependency>
-						</dependencies>
-
-						<configuration>
-							<jdbc>
-								<driver>org.mariadb.jdbc.Driver</driver>
-								<url>jdbc:mariadb://localhost:3306/model</url>
-								<username>test</username>
-								<password>test</password>
-							</jdbc>
-
-							<!-- Generator parameters -->
-							<generator>
-								<name>tools.con.model.support.JooqGenerator</name>
-								<database>
-									<name>org.jooq.meta.mariadb.MariaDBDatabase</name>
-									<includes>.*</includes>
-									<inputSchema>model</inputSchema>
-									<outputSchema>contools</outputSchema>
-									<unsignedTypes>false</unsignedTypes>
-									<forcedTypes>
-										<!-- Convert tinyint to boolean -->
-										<forcedType>
-											<name>BOOLEAN</name>
-											<types>(?i:TINYINT)</types>
-										</forcedType>
-										<!-- Convert varchar column with name 'someJsonObject' to a io.vertx.core.json.JsonObject -->
-										<forcedType>
-											<userType>io.vertx.core.json.JsonObject</userType>
-											<converter>io.github.jklingsporn.vertx.jooq.shared.JsonObjectConverter</converter>
-											<expression>someJsonObject</expression>
-											<types>.*</types>
-										</forcedType>
-									</forcedTypes>
-								</database>
-								<target>
-									<packageName>tools.con.model</packageName>
-									<directory>${project.build.directory}/generated-sources/model</directory>
-								</target>
-								<generate>
-									<interfaces>true</interfaces>
-									<daos>true</daos>
-									<fluentSetters>true</fluentSetters>
-								</generate>
-
-
-								<strategy>
-									<name>io.github.jklingsporn.vertx.jooq.generate.VertxGeneratorStrategy</name>
-								</strategy>
-							</generator>
-
-						</configuration>
-					</plugin>
-
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-compiler-plugin</artifactId>
-						<version>${maven.compiler.plugin.version}</version>
-						<configuration>
-							<release>11</release>
-						</configuration>
-					</plugin>
-
-					<plugin>
-						<artifactId>maven-source-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>attach-sources</id>
-								<phase>package</phase>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<artifactId>maven-javadoc-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>attach-javadocs</id>
-								<phase>package</phase>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
 
 	<build>
+		<plugins>
+			<!-- pre-compile some support classes for model generation -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>compile</goal>
+						</goals>
+					</execution>
+				</executions>
+				<version>${maven.compiler.plugin.version}</version>
+				<configuration>
+					<release>11</release>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.8</version>
+				<executions>
+					<execution>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<concat
+									destfile="${project.build.directory}/classes/setup_db.sql">
+									<fileset
+										file="${project.basedir}/src/main/resources/*.sql" />
+								</concat>
+							</target>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+
+			<plugin>
+				<groupId>org.jooq</groupId>
+				<artifactId>jooq-codegen-maven</artifactId>
+				<version>3.11.5</version>
+
+				<executions>
+					<execution>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+					</execution>
+				</executions>
+
+				<dependencies>
+					<dependency>
+						<groupId>org.mariadb.jdbc</groupId>
+						<artifactId>mariadb-java-client</artifactId>
+						<version>[2.3,)</version>
+					</dependency>
+					<dependency>
+						<groupId>org.testcontainers</groupId>
+						<artifactId>mariadb</artifactId>
+						<version>[1.9.1,)</version>
+					</dependency>
+				</dependencies>
+
+				<configuration>
+					<jdbc>
+						<driver>org.testcontainers.jdbc.ContainerDatabaseDriver</driver>
+						<url>jdbc:tc:mariadb://test@database/test?TC_INITSCRIPT=setup_db.sql&amp;useSSL=false</url>
+					</jdbc>
+
+					<!-- Generator parameters -->
+					<generator>
+						<name>tools.con.model.support.JooqGenerator</name>
+						<database>
+							<name>org.jooq.meta.mariadb.MariaDBDatabase</name>
+							<includes>.*</includes>
+							<inputSchema>test</inputSchema>
+							<outputSchema>contools</outputSchema>
+							<unsignedTypes>false</unsignedTypes>
+							<forcedTypes>
+								<!-- Convert tinyint to boolean -->
+								<forcedType>
+									<name>BOOLEAN</name>
+									<types>(?i:TINYINT)</types>
+								</forcedType>
+								<!-- Convert varchar column with name 'someJsonObject' to a io.vertx.core.json.JsonObject -->
+								<forcedType>
+									<userType>io.vertx.core.json.JsonObject</userType>
+									<converter>io.github.jklingsporn.vertx.jooq.shared.JsonObjectConverter</converter>
+									<expression>someJsonObject</expression>
+									<types>.*</types>
+								</forcedType>
+							</forcedTypes>
+						</database>
+						<target>
+							<packageName>tools.con.model</packageName>
+							<directory>${project.build.directory}/generated-sources/model</directory>
+						</target>
+						<generate>
+							<interfaces>true</interfaces>
+							<daos>true</daos>
+							<fluentSetters>true</fluentSetters>
+						</generate>
+
+
+						<strategy>
+							<name>io.github.jklingsporn.vertx.jooq.generate.VertxGeneratorStrategy</name>
+						</strategy>
+					</generator>
+
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven.compiler.plugin.version}</version>
+				<configuration>
+					<release>11</release>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<phase>package</phase>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<phase>package</phase>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+		
 		<extensions>
 			<extension>
 				<groupId>io.cloudsmith.maven.wagon</groupId>
@@ -418,9 +220,11 @@
 				<version>0.4.0</version>
 			</extension>
 		</extensions>
+		
 		<pluginManagement>
 			<plugins>
-				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
 					<artifactId>lifecycle-mapping</artifactId>
