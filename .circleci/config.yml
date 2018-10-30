@@ -5,6 +5,11 @@ jobs:
     working_directory: ~/con-tools-model
     docker:
       - image: circleci/openjdk:11-jdk-node-browsers
+      - image: circleci/mariadb:latest-ram
+        environment:
+          - MYSQL_DATABASE: model
+          - MYSQL_USER: test
+          - MYSQL_PASSWORD: test
     steps:
       - setup_remote_docker:
           docker_layer_caching: true
@@ -23,6 +28,6 @@ jobs:
             echo '{"auths":{}}' > $HOME/.docker/config.json
       - run:
           name: Build and Deploy
-          command: mvn deploy -Dryuk.container.timeout=120 -X
+          command: mvn -P withdb deploy -Dryuk.container.timeout=120 -X
       - store_artifacts:
           path: target/model-*.jar
