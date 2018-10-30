@@ -28,6 +28,6 @@ jobs:
             echo '{"auths":{}}' > $HOME/.docker/config.json
       - run:
           name: Build and Deploy
-          command: mvn -P withdb deploy -Dryuk.container.timeout=120 -X
+          command: mvn deploy -X
       - store_artifacts:
           path: target/model-*.jar
